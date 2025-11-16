@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="ms">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Game 1 - Adventure</title>
+
+<style>
+  body{margin:0;font-family:Arial;background:#dff7ff;}
+  #canvas{display:block;margin:auto;background:linear-gradient(#aee,#6cf);}
+  #backBtn{
+    position:fixed;top:12px;left:12px;padding:8px 10px;
+    border-radius:8px;border:0;background:#fff;
+    box-shadow:0 2px 6px rgba(0,0,0,0.2);cursor:pointer;
+  }
+</style>
+</head>
+
+<body>
+<button id="backBtn" onclick="back()">← Menu</button>
+<canvas id="canvas" width="900" height="480"></canvas>
+
+<script>
+// Canvas
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+// Player & NPC
+let player = { x: 60, y: 360, w: 40, h: 60, s: 4 };
+let npc = { x: 520, y: 350, w: 50, h: 70 };
+
+let keys = {};
+document.addEventListener("keydown", e => keys[e.key] = true);
+document.addEventListener("keyup", e => keys[e.key] = false);
+
+// Game loop
+function update(){
+  if(keys["ArrowRight"]) player.x += player.s;
+  if(keys["ArrowLeft"]) player.x -= player.s;
+
+  player.x = Math.max(0, Math.min(canvas.width - player.w, player.x));
+
+  // NPC interaction
+  if(player.x + player.w > npc.x - 20 && player.x < npc.x + npc.w + 20){
+    if(keys[" "]){
+      askQuestion();
+    }
+  }
+}
+
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // Ground
+  ctx.fillStyle = "#7bd57e";
+  ctx.fillRect(0, 420, canvas.width, 60);
+
+  // Player
+  ctx.fillStyle = "#1d4ed8";
+  ctx.fillRect(player.x, player.y, player.w, player.h);
+
+  // NPC
+  ctx.fillStyle = "orange";
+  ctx.fillRect(npc.x, npc.y, npc.w, npc.h);
+
+  ctx.fillStyle="black";
+  ctx.font="16px Arial";
+  ctx.fillText("Tahap 1 (Mudah): Bergerak & Dekati NPC untuk soalan", 20, 30);
+}
+
+function loop(){
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+loop();
+
+// Soalan asas
+function askQuestion(){
+  let ans = prompt("Isi tempat kosong:\n\nAli _____ buku.\n\n(Jawapan: membaca / berlari)");
+  if(!ans) return;
+
+  ans = ans.toLowerCase().trim();
+
+  if(ans.includes("membaca")){
+    alert("Betul! Tahniah!");
+  } else {
+    alert("Salah! Jawapan sepatutnya 'membaca'.");
+  }
+}
+
+function back(){
+  window.location.href = "../index.html";
+}
+</script>
+</body>
+</html>
