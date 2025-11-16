@@ -3,110 +3,287 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Game 1 - Adventure</title>
-
+<title>Game 1 - Adventure (Upgraded)</title>
 <style>
-  body{margin:0;font-family:Arial;background:#dff7ff;}
-  #canvas{display:block;margin:auto;background:linear-gradient(#aee,#6cf);}
-  #backBtn{
-    position:fixed;top:12px;left:12px;padding:8px 10px;
-    border-radius:8px;border:0;background:#fff;
-    box-shadow:0 2px 6px rgba(0,0,0,0.2);cursor:pointer;
+  :root{
+    --bg1:#a0e9ff;
+    --bg2:#ffd;
+    --card:#fff;
+    --accent:#1f6feb;
   }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,system-ui,Arial;background:linear-gradient(180deg,#cfe9ff,#eef7ff);color:#07223a;overflow:hidden}
+  #gameWrap{width:100%;height:100vh;display:flex;align-items:center;justify-content:center}
+  #canvas{background:transparent;display:block}
+  /* UI */
+  .uiTop{position:fixed;left:16px;top:12px;z-index:60;background:rgba(255,255,255,0.85);padding:8px 12px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,0.08);font-weight:700}
+  .uiScore{position:fixed;right:16px;top:12px;z-index:60;background:rgba(255,255,255,0.85);padding:8px 12px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,0.08);font-weight:700}
+  .backBtn{position:fixed;left:16px;bottom:16px;z-index:60;padding:10px 12px;border-radius:10px;border:0;background:#fff;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,0.08)}
+  /* start modal */
+  .startModal{position:fixed;inset:0;background:linear-gradient(180deg, rgba(0,0,0,0.35), rgba(0,0,0,0.45));display:flex;align-items:center;justify-content:center;z-index:80}
+  .startCard{width:92%;max-width:720px;background:#fff;padding:20px;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,0.25);text-align:center}
+  .startCard h1{margin:0 0 8px}
+  .startCard p{margin:0 0 16px;color:#334}
+  .startBtn{padding:12px 18px;border-radius:10px;background:var(--accent);color:#fff;border:0;font-weight:700;cursor:pointer}
+  .hint{font-size:13px;color:#556;margin-top:10px}
+  /* small mobile controls */
+  .touchControls{position:fixed;left:10px;bottom:10px;z-index:70;display:flex;gap:8px}
+  .tcBtn{width:60px;height:60px;border-radius:10px;background:rgba(255,255,255,0.9);display:flex;align-items:center;justify-content:center;font-weight:700;box-shadow:0 8px 20px rgba(0,0,0,0.08);cursor:pointer}
 </style>
 </head>
-
 <body>
-<button id="backBtn" onclick="back()">← Menu</button>
-<canvas id="canvas" width="900" height="480"></canvas>
+<div id="gameWrap">
+  <canvas id="canvas" width="1000" height="540"></canvas>
+  <div class="uiTop">Tahap 1 — Adventure</div>
+  <div class="uiScore" id="scoreUI">Score: 0</div>
+  <button class="backBtn" onclick="back()">← Menu</button>
+
+  <!-- Start Modal -->
+  <div class="startModal" id="startModal">
+    <div class="startCard">
+      <h1>RPG Kata Kerja — Tahap 1</h1>
+      <p>Gerakkan watak gunakan anak panah ◀ ▶. Tekan SPACE untuk lompat. Dekati NPC untuk jawab soalan tentang kata kerja transitif / tak transitif.</p>
+      <button class="startBtn" id="startBtn">MULAKAN</button>
+      <div class="hint">Tip: Kumpul duit kuning untuk skor +10!</div>
+    </div>
+  </div>
+
+  <!-- mobile controls -->
+  <div class="touchControls" id="touchControls" style="display:none;">
+    <div class="tcBtn" id="leftBtn">◀</div>
+    <div class="tcBtn" id="jumpBtn">▲</div>
+    <div class="tcBtn" id="rightBtn">▶</div>
+  </div>
+</div>
 
 <script>
-  // BGM Game 1
+// ----- BGM Game 1 (paste this at top) -----
 const bgm = new Audio('../audio/game1.mp3');
 bgm.loop = true;
 bgm.volume = 0.35;
-
 function tryPlayBgm() {
-  bgm.play().catch(() => {});
+  bgm.play().catch(()=>{});
   document.removeEventListener('click', tryPlayBgm);
   document.removeEventListener('keydown', tryPlayBgm);
 }
 document.addEventListener('click', tryPlayBgm);
 document.addEventListener('keydown', tryPlayBgm);
+// -------------------------------------------
 
-// Canvas
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
+// Canvas setup
+const canvas = document.getElementById('canvas'), ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
 
-// Player & NPC
-let player = { x: 60, y: 360, w: 40, h: 60, s: 4 };
-let npc = { x: 520, y: 350, w: 50, h: 70 };
+// Responsive canvas scaling
+function fitCanvas(){
+  const ratio = W/H;
+  let w = Math.min(window.innerWidth, 1100);
+  let h = Math.round(w / ratio);
+  canvas.style.width = w + 'px';
+  canvas.style.height = h + 'px';
+}
+window.addEventListener('resize', fitCanvas);
+fitCanvas();
 
-let keys = {};
-document.addEventListener("keydown", e => keys[e.key] = true);
-document.addEventListener("keyup", e => keys[e.key] = false);
+// Parallax backgrounds (simple shapes)
+const bgLayers = [
+  { speed: 0.2, color: '#aee9ff', y: 0, objs: [] }, // far
+  { speed: 0.6, color: '#d0f7d8', y: 0, objs: [] }  // near ground
+];
 
-// Game loop
-function update(){
-  if(keys["ArrowRight"]) player.x += player.s;
-  if(keys["ArrowLeft"]) player.x -= player.s;
+// player
+const player = { x:80, y:360, w:48, h:64, vx:0, vy:0, speed:3.6, onGround:false, jumpPow:10, flip:false, frame:0 };
+const gravity = 0.6;
 
-  player.x = Math.max(0, Math.min(canvas.width - player.w, player.x));
+// NPC
+const npc = { x:520, y:350, w:48, h:64 };
 
-  // NPC interaction
-  if(player.x + player.w > npc.x - 20 && player.x < npc.x + npc.w + 20){
-    if(keys[" "]){
-      askQuestion();
-    }
+// coins
+let coins = [
+  { x:300, y:390, w:18, h:18, collected:false },
+  { x:700, y:390, w:18, h:18, collected:false }
+];
+
+let score = 0;
+
+// inputs
+const keys = {};
+document.addEventListener('keydown', e=>{ keys[e.key]=true; });
+document.addEventListener('keyup', e=>{ keys[e.key]=false; });
+
+// touch controls
+const leftBtn = document.getElementById('leftBtn'), rightBtn=document.getElementById('rightBtn'), jumpBtn=document.getElementById('jumpBtn');
+leftBtn?.addEventListener('touchstart', e=>{ e.preventDefault(); keys['ArrowLeft']=true;});
+leftBtn?.addEventListener('touchend', e=>{ keys['ArrowLeft']=false;});
+rightBtn?.addEventListener('touchstart', e=>{ e.preventDefault(); keys['ArrowRight']=true;});
+rightBtn?.addEventListener('touchend', e=>{ keys['ArrowRight']=false;});
+jumpBtn?.addEventListener('touchstart', e=>{ e.preventDefault(); doJump();});
+
+// SFX optional collect
+function playCollect(){
+  try{
+    const s = new Audio('../audio/collect.mp3');
+    s.volume = 0.6;
+    s.play();
+  }catch(e){}
+}
+
+// start / menu
+const startModal = document.getElementById('startModal'), startBtn = document.getElementById('startBtn');
+startBtn.addEventListener('click', ()=>{
+  startModal.style.display = 'none';
+  // if small screen show touch controls
+  if(window.innerWidth < 720) document.getElementById('touchControls').style.display='flex';
+  // start bgm
+  tryPlayBgm();
+});
+
+// game functions
+function doJump(){
+  if(player.onGround){
+    player.vy = -player.jumpPow;
+    player.onGround = false;
   }
 }
 
+function update(){
+  // horizontal movement
+  player.vx = 0;
+  if(keys['ArrowRight'] || keys['d']){ player.vx = player.speed; player.flip=false; }
+  if(keys['ArrowLeft'] || keys['a']){ player.vx = -player.speed; player.flip=true; }
+  // jump
+  if((keys[' '] || keys['ArrowUp'] || keys['w']) && player.onGround){ doJump(); keys[' ']=false; }
+  // physics
+  player.x += player.vx;
+  player.vy += gravity;
+  player.y += player.vy;
+  // ground
+  if(player.y + player.h >= 420){ player.y = 420 - player.h; player.vy = 0; player.onGround = true; }
+  // bounds
+  player.x = Math.max(8, Math.min(W - player.w - 8, player.x));
+
+  // parallax scroll using player.x
+  const camX = player.x - 160;
+  bgLayers.forEach(layer=>{
+    layer.y = -camX * layer.speed;
+  });
+
+  // coin collisions
+  coins.forEach(c=>{
+    if(!c.collected && rectColl(player, c)){
+      c.collected = true; score += 10; document.getElementById('scoreUI').innerText = 'Score: ' + score; playCollect();
+    }
+  });
+
+  // NPC interaction proximity
+  // if player close and press space -> ask question
+  if(player.x + player.w > npc.x - 20 && player.x < npc.x + npc.w + 20 && Math.abs((player.y+player.h) - (npc.y+npc.h)) < 50){
+    // show small hint on UI
+    // but only trigger on space down
+    if(keys[' ']){ askQuestion(); keys[' ']=false; }
+  }
+}
+
+function rectColl(a,b){
+  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+}
+
 function draw(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
+  // clear
+  ctx.clearRect(0,0,W,H);
 
-  // Ground
-  ctx.fillStyle = "#7bd57e";
-  ctx.fillRect(0, 420, canvas.width, 60);
+  // draw sky gradient
+  const g = ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,'#bfe9ff'); g.addColorStop(1,'#e8fbff');
+  ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
 
-  // Player
-  ctx.fillStyle = "#1d4ed8";
-  ctx.fillRect(player.x, player.y, player.w, player.h);
+  // draw parallax layers as simple shapes
+  // far hills
+  drawLayer(bgLayers[0], '#8fd6f7', 30);
+  // near ground hills
+  drawLayer(bgLayers[1], '#9eeaa6', 16);
 
-  // NPC
-  ctx.fillStyle = "orange";
+  // ground
+  ctx.fillStyle = '#7bd57e'; ctx.fillRect(0,420,W,120);
+
+  // NPC (simple)
+  ctx.fillStyle = '#ffb86b';
   ctx.fillRect(npc.x, npc.y, npc.w, npc.h);
+  ctx.fillStyle='#222'; ctx.font='14px Inter'; ctx.fillText('NPC', npc.x+8, npc.y+20);
 
-  ctx.fillStyle="black";
-  ctx.font="16px Arial";
-  ctx.fillText("Tahap 1 (Mudah): Bergerak & Dekati NPC untuk soalan", 20, 30);
+  // coins
+  coins.forEach(c=>{
+    if(!c.collected){
+      ctx.fillStyle='#ffd700'; ctx.beginPath();
+      ctx.arc(c.x + c.w/2, c.y + c.h/2, c.w/2, 0, Math.PI*2);
+      ctx.fill();
+      ctx.strokeStyle='#b8860b'; ctx.stroke();
+    }
+  });
+
+  // player (simple rectangle with head)
+  ctx.save();
+  ctx.translate(player.x + player.w/2, player.y + player.h/2);
+  if(player.flip) ctx.scale(-1,1);
+  ctx.fillStyle='#1d4ed8';
+  ctx.fillRect(-player.w/2, -player.h/2, player.w, player.h);
+  ctx.fillStyle='#cfe'; ctx.fillRect(-player.w/2 + 8, -player.h/2 + 8, player.w - 16, 18); // face stripe
+  ctx.restore();
+
+  // HUD texts
+  ctx.fillStyle='rgba(0,0,0,0.6)'; ctx.font='16px Inter';
+  ctx.fillText('Tekan SPACE untuk lompat. Dekati NPC dan tekan SPACE untuk soalan.', 20, 30);
+}
+
+// draw parallax helper
+function drawLayer(layer, color, detailCount){
+  ctx.save();
+  ctx.translate(layer.y,0);
+  ctx.fillStyle = color;
+  for(let i=-2;i<detailCount;i++){
+    const x = (i * 360) % (W+360);
+    const h = 80 + (i%3)*20;
+    ctx.beginPath();
+    ctx.ellipse(x+60, 360, 200, h, 0, 0, Math.PI*2);
+    ctx.fill();
+  }
+  ctx.restore();
 }
 
 function loop(){
-  update();
-  draw();
+  update(); draw();
   requestAnimationFrame(loop);
 }
 loop();
 
-// Soalan asas
+// Question mechanic
 function askQuestion(){
-  let ans = prompt("Isi tempat kosong:\n\nAli _____ buku.\n\n(Jawapan: membaca / berlari)");
+  const q = "Ali _____ buku. Pilih kata kerja yang betul (taip): membaca / berlari";
+  const ans = prompt(q);
   if(!ans) return;
-
-  ans = ans.toLowerCase().trim();
-
-  if(ans.includes("membaca")){
-    alert("Betul! Tahniah!");
+  if(ans.toLowerCase().includes('membaca')){
+    alert('Betul — "membaca" adalah kata kerja yang betul dalam ayat ini (transitif).');
   } else {
-    alert("Salah! Jawapan sepatutnya 'membaca'.");
+    alert('Salah — jawapan sepatutnya "membaca".');
   }
 }
 
+// back to menu - stop bgm
 function back(){
   try { bgm.pause(); bgm.currentTime = 0; } catch(e){}
   window.location.href = "../index.html";
 }
 
+// keyboard for space jump / interaction
+document.addEventListener('keydown', e=>{
+  if(e.key === ' '){ if(startModal.style.display !== 'none'){ startBtn.click(); } else { keys[' ']=true; } }
+});
+
+// clean up on unload
+window.addEventListener('beforeunload', ()=>{ try{ bgm.pause(); }catch(e){} });
+
+// End of script
 </script>
 </body>
 </html>
+
