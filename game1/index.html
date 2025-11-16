@@ -21,6 +21,19 @@
 <canvas id="canvas" width="900" height="480"></canvas>
 
 <script>
+  // BGM Game 1
+const bgm = new Audio('../audio/game1.mp3');
+bgm.loop = true;
+bgm.volume = 0.35;
+
+function tryPlayBgm() {
+  bgm.play().catch(() => {});
+  document.removeEventListener('click', tryPlayBgm);
+  document.removeEventListener('keydown', tryPlayBgm);
+}
+document.addEventListener('click', tryPlayBgm);
+document.addEventListener('keydown', tryPlayBgm);
+
 // Canvas
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
@@ -90,8 +103,10 @@ function askQuestion(){
 }
 
 function back(){
+  try { bgm.pause(); bgm.currentTime = 0; } catch(e){}
   window.location.href = "../index.html";
 }
+
 </script>
 </body>
 </html>
