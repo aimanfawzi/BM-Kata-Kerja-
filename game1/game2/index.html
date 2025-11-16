@@ -1,184 +1,29 @@
-<!doctype html>
-<html lang="ms">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Game 2 - Puzzle Padanan</title>
-<style>
-  body{margin:0;font-family:Inter,Arial;background:#f3f9ff;color:#07223a}
-  .wrap{max-width:900px;margin:28px auto;padding:18px}
-  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
-  button.back{padding:8px 10px;border-radius:8px;border:0;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,0.08);cursor:pointer}
-  .stage{font-weight:700}
-  .board{display:flex;gap:18px;align-items:flex-start}
-  .bank{flex:1;background:#fff;padding:12px;border-radius:10px;box-shadow:0 8px 20px rgba(11,18,32,0.04)}
-  .targets{width:320px;display:flex;flex-direction:column;gap:12px}
-  .chip{display:inline-block;padding:10px 12px;margin:8px;border-radius:8px;background:#e8f6ff;border:2px solid transparent;cursor:grab}
-  .chip.dragging{opacity:0.6}
-  .slot{min-height:52px;padding:10px;border-radius:10px;background:#f7fbff;border:2px dashed #cfe6ff;display:flex;align-items:center;justify-content:center}
-  .slot.filled{border-style:solid;background:#e6fbff}
-  .ok{color:green;font-weight:700}
-  .wrong{color:#d23;font-weight:700}
-  .controls{margin-top:12px;display:flex;gap:10px}
-</style>
-</head>
-<body>
-<div class="wrap">
-  <div class="topbar">
-    <div>
-      <button class="back" onclick="back()">← Menu</button>
-    </div>
-    <div class="stage">Tahap 2 — Puzzle Padanan</div>
-  </div>
-
-  <div class="board">
-    <div class="bank" id="bank">
-      <h3>Perkataan (Seret ke kotak yang sesuai)</h3>
-      <div id="chips"></div>
-
-      <div class="controls">
-        <button onclick="shuffle()" style="padding:8px 10px;border-radius:8px;border:0;background:#1f6feb;color:#fff;cursor:pointer">Shuffle</button>
-        <button onclick="resetBoard()" style="padding:8px 10px;border-radius:8px;border:0;background:#f3f4f6;cursor:pointer">Reset</button>
-      </div>
-      <p style="margin-top:12px;font-size:14px;color:#3b4b57">Padankan kata kerja dengan jenisnya: <em>transitif</em> atau <em>tak transitif</em>.</p>
-    </div>
-
-    <div class="targets">
-      <div>
-        <h4>Transitif</h4>
-        <div id="slotTrans" class="slot" ondrop="drop(event,'trans')" ondragover="allowDrop(event)"></div>
-      </div>
-      <div>
-        <h4>Tak transitif</h4>
-        <div id="slotNon" class="slot" ondrop="drop(event,'non')" ondragover="allowDrop(event)"></div>
-      </div>
-      <div>
-        <h4>Status</h4>
-        <div id="result" style="padding:8px;border-radius:8px;background:#fff;box-shadow:0 6px 18px rgba(11,18,32,0.04)">Belum ada tindakan</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<script>
-  // BGM Game 2
-const bgm = new Audio('../audio/game2.mp3');
-bgm.loop = true;
-bgm.volume = 0.35;
-
-function tryPlayBgm() {
-  bgm.play().catch(() => {});
-  document.removeEventListener('click', tryPlayBgm);
-  document.removeEventListener('keydown', tryPlayBgm);
-}
-document.addEventListener('click', tryPlayBgm);
-document.addEventListener('keydown', tryPlayBgm);
-
-  // Question bank (kata kerja + jenis)
-  const items = [
-    { word: 'membaca', type: 'trans' },
-    { word: 'berlari', type: 'non' },
-    { word: 'memotong', type: 'trans' },
-    { word: 'tidur', type: 'non' },
-    { word: 'menulis', type: 'trans' }
-  ];
-
-  let chipsContainer = document.getElementById('chips');
-  let slotTrans = document.getElementById('slotTrans');
-  let slotNon = document.getElementById('slotNon');
-  let result = document.getElementById('result');
-
-  function makeChips() {
-    chipsContainer.innerHTML = '';
-    // shuffle copy
-    let pool = items.slice();
-    pool.forEach((it, idx) => {
-      let d = document.createElement('div');
-      d.className = 'chip';
-      d.draggable = true;
-      d.id = 'chip-' + idx;
-      d.innerText = it.word;
-      d.dataset.type = it.type;
-      d.ondragstart = function(e){ e.dataTransfer.setData('text/plain', d.id); d.classList.add('dragging'); }
-      d.ondragend = function(){ d.classList.remove('dragging'); }
-      chipsContainer.appendChild(d);
+// ===== confetti + nicer chip style helper (paste into game2 script) =====
+function confettiBurst() {
+  const colors = ['#ffd166','#06d6a0','#4cc9f0','#ef476f'];
+  for(let i=0;i<40;i++){
+    const el = document.createElement('div');
+    el.style.position='fixed';
+    el.style.zIndex=9999;
+    el.style.left = (50 + (Math.random()-0.5)*60) + 'vw';
+    el.style.top = (20 + Math.random()*20) + 'vh';
+    el.style.width='8px'; el.style.height='12px';
+    el.style.background = colors[Math.floor(Math.random()*colors.length)];
+    el.style.opacity='0.95';
+    el.style.transform = `rotate(${Math.random()*360}deg)`;
+    el.style.borderRadius='2px';
+    document.body.appendChild(el);
+    const dx = (Math.random()-0.5)*200;
+    const dy = 600 + Math.random()*200;
+    el.animate([{transform:'translateY(0px) rotate(0deg)', opacity:1},
+                {transform:`translate(${dx}px, ${dy}px) rotate(${Math.random()*720}deg)`, opacity:0}], {
+      duration: 1200 + Math.random()*600, easing:'cubic-bezier(.2,.8,.2,1)'
     });
+    setTimeout(()=>el.remove(), 2000);
   }
-
-  function allowDrop(ev){ ev.preventDefault(); }
-  function drop(ev, targetType){
-    ev.preventDefault();
-    let id = ev.dataTransfer.getData('text/plain');
-    if(!id) return;
-    let el = document.getElementById(id);
-    if(!el) return;
-
-    // clear slot then append
-    if(targetType === 'trans'){
-      slotTrans.innerHTML = '';
-      slotTrans.appendChild(el);
-      slotTrans.classList.add('filled');
-    } else {
-      slotNon.innerHTML = '';
-      slotNon.appendChild(el);
-      slotNon.classList.add('filled');
-    }
-    checkAnswer();
-  }
-
-  function getChipTypeFromSlot(slot){
-    if(slot.children.length === 0) return null;
-    return slot.children[0].dataset.type;
-  }
-
-  function checkAnswer(){
-    let t = getChipTypeFromSlot(slotTrans);
-    let n = getChipTypeFromSlot(slotNon);
-    if(!t && !n){ result.innerHTML = 'Belum ada tindakan'; result.style.color='inherit'; return; }
-
-    // If both filled, check
-    if(t && n){
-      if(t === 'trans' && n === 'non'){
-        result.innerHTML = '<span class="ok">Betul! Kedua-dua padanan tepat.</span>';
-      } else {
-        result.innerHTML = '<span class="wrong">Salah — cuba semula. Pastikan setiap kata kerja diletakkan ke kotak yang betul.</span>';
-      }
-      return;
-    }
-
-    // If only one filled, give hint
-    if(t && !n){ result.innerHTML = 'Satu lagi kotak kosong — teruskan.'; result.style.color='inherit'; return; }
-    if(!t && n){ result.innerHTML = 'Satu lagi kotak kosong — teruskan.'; result.style.color='inherit'; return; }
-  }
-
-  function resetBoard(){
-    // move chips back to bank
-    makeChips();
-    slotTrans.innerHTML = '';
-    slotNon.innerHTML = '';
-    slotTrans.classList.remove('filled');
-    slotNon.classList.remove('filled');
-    result.innerText = 'Belum ada tindakan';
-  }
-
-  function shuffle(){
-    resetBoard();
-    // random rearrange chips visually
-    let chips = Array.from(chipsContainer.children);
-    for(let i = chips.length -1; i>0; i--){
-      let j = Math.floor(Math.random()*(i+1));
-      chipsContainer.appendChild(chips[j]);
-    }
-  }
-
- function back() {
-  try { bgm.pause(); bgm.currentTime = 0; } catch(e){}
-  window.location.href = "../index.html";
 }
 
-
-  // init
-  makeChips();
-</script>
-</body>
-</html>
+// nicer chip CSS touch (you may paste CSS into head if you want)
+// .chip { transition: transform 120ms ease, box-shadow 120ms ease; }
+// add small lift on dragstart
+// in JS ensure ondragstart add .dragging class that scales
