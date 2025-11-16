@@ -1,186 +1,22 @@
-<!doctype html>
-<html lang="ms">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Game 3 - Boss Battle</title>
+<div style="max-width:900px;margin:16px auto;">
+  <div style="margin-bottom:8px">Player</div>
+  <div style="background:#f0f0f0;border-radius:8px;overflow:hidden;height:18px;width:100%;">
+    <div id="playerBar" style="width:100%;height:18px;background:#06d6a0;transition:width 400ms ease"></div>
+  </div>
 
-<style>
-  body{
-    margin:0;
-    font-family:Inter, Arial;
-    background:#fff0f0;
-    color:#222;
-  }
-  .wrap{
-    max-width:900px;
-    margin:24px auto;
-    padding:18px;
-    background:#ffffff;
-    border-radius:12px;
-    box-shadow:0 8px 18px rgba(0,0,0,0.06);
-  }
-  button{
-    cursor:pointer;
-  }
-  #attackBtn{
-    padding:12px 18px;
-    border:0;
-    background:#d62828;
-    color:white;
-    border-radius:10px;
-    font-size:16px;
-    margin-top:12px;
-  }
-  #restartBtn{
-    padding:10px 14px;
-    border:0;
-    background:#3a86ff;
-    color:white;
-    border-radius:8px;
-    font-size:14px;
-    margin-top:12px;
-  }
-  .hpBar{
-    margin:8px 0;
-    padding:10px;
-    background:#fff;
-    border-radius:10px;
-    border:1px solid #f5cccc;
-    font-weight:bold;
-  }
-  #bossImg{
-    width:180px;
-    height:180px;
-    background:#ffb3b3;
-    border-radius:20px;
-    margin:12px auto;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:40px;
-    box-shadow:0 8px 20px rgba(0,0,0,0.1);
-  }
-  .back{
-    padding:8px 10px;
-    border:0;
-    border-radius:8px;
-    background:#fff;
-    box-shadow:0 2px 6px rgba(0,0,0,0.15);
-    cursor:pointer;
-  }
-</style>
-</head>
+  <div style="margin-top:12px">Boss</div>
+  <div style="background:#fff0f0;border-radius:8px;overflow:hidden;height:18px;width:100%;">
+    <div id="bossBar" style="width:100%;height:18px;background:#d62828;transition:width 400ms ease"></div>
+  </div>
 
-<body>
-<div class="wrap">
-
-  <button class="back" onclick="menu()">← Menu</button>
-
-  <h2>Boss Battle — Tahap Sukar</h2>
-  <p>Jawab soalan dengan betul untuk menyerang boss!</p>
-
-  <div id="bossImg">💀</div>
-
-  <div class="hpBar" id="pHP">Player HP: ❤️❤️❤️</div>
-  <div class="hpBar" id="bHP">Boss HP: 💀💀💀💀💀</div>
-
-  <button id="attackBtn" onclick="attack()">SERANG 🔥</button>
-  <button id="restartBtn" onclick="resetGame()" style="display:none;">Main Semula</button>
-
+  <div id="battleStatus" style="margin-top:12px;font-weight:700"></div>
 </div>
 
-<script>
-  // BGM Game 3
-const bgm = new Audio('../audio/game3.mp3');
-bgm.loop = true;
-bgm.volume = 0.35;
-
-function tryPlayBgm() {
-  bgm.play().catch(() => {});
-  document.removeEventListener('click', tryPlayBgm);
-  document.removeEventListener('keydown', tryPlayBgm);
-}
-document.addEventListener('click', tryPlayBgm);
-document.addEventListener('keydown', tryPlayBgm);
-
-// HP values
-let playerHP = 3;
-let bossHP = 5;
-
-let pHP = document.getElementById("pHP");
-let bHP = document.getElementById("bHP");
-let restartBtn = document.getElementById("restartBtn");
-
-// Soalan sukar
-const questions = [
-  {
-    q: "Kenal pasti kata kerja transitif: \nA) Ali tidur.\nB) Ali memotong kek.\n\nJawab A atau B",
-    ans: "b"
-  },
-  {
-    q: "Manakah ayat tak transitif? \nA) Kucing berlari.\nB) Ayah menulis surat.\n\nJawab A atau B",
-    ans: "a"
-  },
-  {
-    q: "Isi tempat kosong: \"Siti _____ buku kepada adiknya.\" \n(Pilih: memberi / berjalan)",
-    ans: "memberi"
-  },
-];
-
-function attack(){
-  if(playerHP <= 0 || bossHP <= 0) return;
-
-  // Random soalan
-  let q = questions[Math.floor(Math.random()*questions.length)];
-
-  let userAns = prompt(q.q);
-  if(!userAns) return;
-
-  userAns = userAns.toLowerCase().trim();
-
-  // check answer
-  if(userAns === q.ans){
-    bossHP--;
-    alert("Betul! Boss -1 HP!");
-  } else {
-    playerHP--;
-    alert("Salah! Player -1 HP!");
-  }
-
-  updateHP();
-
-  // check win/lose
-  if(bossHP <= 0){
-    alert("🔥 Anda menang! Boss telah dikalahkan!");
-    restartBtn.style.display = "inline-block";
-    document.getElementById("attackBtn").style.display = "none";
-  }
-  if(playerHP <= 0){
-    alert("💀 Anda kalah! Cuba lagi.");
-    restartBtn.style.display = "inline-block";
-    document.getElementById("attackBtn").style.display = "none";
-  }
-}
-
-function updateHP(){
-  pHP.innerText = "Player HP: " + "❤️".repeat(playerHP);
-  bHP.innerText = "Boss HP: " + "💀".repeat(bossHP);
-}
-
-function resetGame(){
-  playerHP = 3;
-  bossHP = 5;
-  updateHP();
-  restartBtn.style.display = "none";
-  document.getElementById("attackBtn").style.display = "inline-block";
-}
-
-function menu(){
-  try { bgm.pause(); bgm.currentTime = 0; } catch(e){}
-  window.location.href = "../index.html";
-}
-
-</script>
-</body>
-</html>
+<div id="victoryOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:90;align-items:center;justify-content:center">
+  <div style="background:#fff;padding:20px;border-radius:12px;text-align:center;max-width:500px;margin:auto">
+    <h2 id="victoryTitle">Anda Menang!</h2>
+    <p id="victoryDesc">Tahniah! Anda mengalahkan boss.</p>
+    <button onclick="resetGame()" style="padding:10px 14px;border-radius:8px;background:#1f6feb;color:#fff;border:0">Main Semula</button>
+    <button onclick="window.location.href='../index.html'" style="padding:10px 14px;border-radius:8px;background:#eee;color:#222;border:0;margin-left:8px">Menu</button>
+  </div>
+</div>
