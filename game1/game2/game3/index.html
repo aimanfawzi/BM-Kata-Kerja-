@@ -91,6 +91,19 @@
 </div>
 
 <script>
+  // BGM Game 3
+const bgm = new Audio('../audio/game3.mp3');
+bgm.loop = true;
+bgm.volume = 0.35;
+
+function tryPlayBgm() {
+  bgm.play().catch(() => {});
+  document.removeEventListener('click', tryPlayBgm);
+  document.removeEventListener('keydown', tryPlayBgm);
+}
+document.addEventListener('click', tryPlayBgm);
+document.addEventListener('keydown', tryPlayBgm);
+
 // HP values
 let playerHP = 3;
 let bossHP = 5;
@@ -164,8 +177,10 @@ function resetGame(){
 }
 
 function menu(){
+  try { bgm.pause(); bgm.currentTime = 0; } catch(e){}
   window.location.href = "../index.html";
 }
+
 </script>
 </body>
 </html>
