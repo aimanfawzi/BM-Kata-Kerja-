@@ -61,6 +61,19 @@
 </div>
 
 <script>
+  // BGM Game 2
+const bgm = new Audio('../audio/game2.mp3');
+bgm.loop = true;
+bgm.volume = 0.35;
+
+function tryPlayBgm() {
+  bgm.play().catch(() => {});
+  document.removeEventListener('click', tryPlayBgm);
+  document.removeEventListener('keydown', tryPlayBgm);
+}
+document.addEventListener('click', tryPlayBgm);
+document.addEventListener('keydown', tryPlayBgm);
+
   // Question bank (kata kerja + jenis)
   const items = [
     { word: 'membaca', type: 'trans' },
@@ -158,7 +171,11 @@
     }
   }
 
-  function back(){ window.location.href = "../index.html"; }
+ function back() {
+  try { bgm.pause(); bgm.currentTime = 0; } catch(e){}
+  window.location.href = "../index.html";
+}
+
 
   // init
   makeChips();
