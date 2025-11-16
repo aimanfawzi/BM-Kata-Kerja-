@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="ms">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>RPG Kata Kerja - Menu Utama</title>
+<style>
+  :root{--accent:#1f6feb;--bg:#e8f4ff;--card:#fff}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,system-ui,Arial;background:linear-gradient(180deg,#cfe9ff 0%,#eef7ff 100%);color:#0b2545}
+  .wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:28px}
+  .card{width:100%;max-width:980px;background:var(--card);border-radius:16px;box-shadow:0 10px 30px rgba(11,18,32,0.08);padding:28px;display:grid;grid-template-columns:1fr 360px;gap:20px}
+  .hero h1{margin:0 0 8px;font-size:28px} 
+  .hero p{margin:0 0 16px;line-height:1.5}
+  .buttons{display:flex;gap:12px;flex-wrap:wrap}
+  .btn{background:var(--accent);color:#fff;border:0;padding:12px 16px;border-radius:10px;cursor:pointer;font-weight:600}
+  .ghost{background:transparent;color:var(--accent);border:2px solid rgba(31,111,235,0.12)}
+  .panel{background:linear-gradient(180deg,#f6fbff,#ffffff);padding:16px;border-radius:12px}
+  .menu-list{list-style:none;padding:0;margin:0}
+  .menu-list li{padding:10px 8px;border-radius:8px;margin-bottom:8px;background:#f1f8ff;cursor:pointer}
+  .mutebtn{background:#f3f4f6;color:#111;border-radius:8px;padding:8px 10px;border:0;cursor:pointer;margin-top:10px}
+  footer{font-size:13px;color:#536171;margin-top:12px}
+</style>
+</head>
+
+<body>
+<div class="wrap">
+  <div class="card">
+
+    <div class="hero">
+      <h1>RPG Kata Kerja — Tahun 5</h1>
+      <p><strong>Objektif:</strong> Murid dapat mengenal pasti dan menggunakan kata kerja transitif dan tak transitif mengikut konteks (DSKP 5.1.2). Pilih tahap dan mula main!</p>
+
+      <div class="buttons">
+        <button class="btn" onclick="go('game1')">MULAKAN - Tahap 1 (Mudah)</button>
+        <button class="btn ghost" onclick="go('game2')">Tahap 2 (Sederhana)</button>
+        <button class="btn ghost" onclick="go('game3')">Tahap 3 (Sukar)</button>
+      </div>
+
+      <div style="margin-top:18px">
+        <button class="mutebtn" id="muteBtn" onclick="toggleMute()">MUTE BGM</button>
+      </div>
+
+      <footer>Direka untuk tugasan multimedia interaktif — IPG. Klik “Pilih Tahap” untuk lihat perincian setiap game.</footer>
+    </div>
+
+    <div class="panel">
+      <h3>Deskripsi Ringkas</h3>
+      <ul>
+        <li><strong>Tahap 1:</strong> Side-scrolling mini adventure + MCQ</li>
+        <li><strong>Tahap 2:</strong> Puzzle matching / drag & drop</li>
+        <li><strong>Tahap 3:</strong> Mini boss battle (jawab soalan untuk menyerang)</li>
+      </ul>
+      <hr style="margin:12px 0">
+      <h4>Panduan Pantas</h4>
+      <ol style="padding-left:16px">
+        <li>Tekan <b>MULAKAN</b> untuk terus ke Game 1.</li>
+        <li>Pilih tahap jika mahu ke game lain.</li>
+        <li>Gunakan butang mute jika mahu senyapkan muzik.</li>
+      </ol>
+      <div style="margin-top:12px">
+        <small>Hosted via GitHub Pages • Embed ke Google Sites untuk pembentangan.</small>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const audioFiles = {
+    game1: "audio/game1.mp3",
+    game2: "audio/game2.mp3",
+    game3: "audio/game3.mp3"
+  };
+
+  let bgm = new Audio();
+  bgm.loop = true;
+  bgm.volume = 0.45;
+
+  function playFor(scene){
+    if(!audioFiles[scene]) return;
+    bgm.src = audioFiles[scene];
+    bgm.play().catch(()=>{});
+  }
+
+  function go(scene){
+    window.location.href = scene + "/index.html";
+  }
+
+  function toggleMute(){
+    if(bgm.muted){
+      bgm.muted = false;
+      document.getElementById('muteBtn').innerText='MUTE BGM';
+    } else {
+      bgm.muted = true;
+      document.getElementById('muteBtn').innerText='UNMUTE BGM';
+    }
+  }
+
+  // Autoplay fallback (browser requires user click first)
+  document.addEventListener('click', function once(){
+    bgm.src = audioFiles.game1;
+    bgm.play().catch(()=>{});
+    document.removeEventListener('click', once);
+  });
+</script>
+
+</body>
+</html>
